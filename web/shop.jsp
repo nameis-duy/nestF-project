@@ -54,11 +54,11 @@
                                 <div id="dropDownMenu" class="d-inline-block position-relative">
                                     <i class="fas fa-user me-2"></i>${sessionScope.USER.name}
                                     <div id="dropDownContent" class="d-none bg-white text-start position-absolute shadow">
-                                             <c:if test="${not empty sessionScope.USER}">                                   
+                                        <c:if test="${not empty sessionScope.USER}">                                   
                                             <a href="account" class="nav-link mb-2 text-decoration-none p-2" id="item">Cài đặt tài khoản</a>    
                                         </c:if>                                    
                                         <c:if test="${sessionScope.USER.role eq 'SE'}">         
-                                            <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>  
+                                            <a href="sellerPage" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>  
                                         </c:if>                                     
                                         <c:if test="${sessionScope.USER.role eq 'AD'}">           
                                             <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý cửa hàng</a>      
@@ -98,14 +98,14 @@
                     <form class="form-horizontal" action="FilterController" method="POST">
                         <div class="m-auto" id="filter">
                             <h4 class="category-title d-inline-block">Phân loại</h4>
-                            <select class="form-controls category-option" name="categoryFilter">
+                            <select class="form-controls category-option" name="categoryFilter" onchange="filter(this)">
                                 <option value="empty"></option>
                                 <option value="yenTho">Tổ yến thô</option>
                                 <option value="yenTinhChe">Tổ yến tinh chế</option>
                                 <option value="yenChungTuoi">Yến chưng tươi</option>
                                 <option value="yenChungSan">Yến chưng sẵn</option>
                             </select>
-                            <select class="form-controls category-option" name="priceFilter">
+                            <select class="form-controls category-option" name="priceFilter" onchange="filter(this)">
                                 <option value="empty"></option>
                                 <option value="below1">Dưới 1.000.000 đ</option>
                                 <option value="1to2">Từ 1.000.000 đ ~ 2.000.000 đ</option>
@@ -113,7 +113,6 @@
                                 <option value="3to4">Từ 3.000.000 đ ~ 4.000.000 đ</option>
                                 <option value="over4">Trên 4.000.000 đ</option>
                             </select>
-                            <button class="submit-btn" type="submit" name="Filter" value="Filter">Lọc</button>
                         </div>
                     </form>
 
@@ -151,8 +150,13 @@
                                                 </a>
                                             </div>
                                             <div class="buynow-btn">
-                                                <button class="btn btn-dark" onclick="checkState(${not empty sessionScope.USER ? product.productID : ''})">
-                                                    <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                <button class="btn btn-dark" ${product.quantity eq 0 ? 'disabled' : ''} onclick="checkState(${not empty sessionScope.USER ? product.productID : ''})">
+                                                    <c:if test="${product.quantity eq 0}">
+                                                        <i class="fa-solid fa-cart-xmark"></i> Hết hàng
+                                                    </c:if>
+                                                    <c:if test="${product.quantity ne 0}">
+                                                        <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                    </c:if>
                                                 </button>
                                             </div>
                                         </div>
@@ -176,6 +180,13 @@
                     </button>
                 </a>
             </c:if>
+            <c:if test="${sessionScope.USER.role eq 'SE'}">
+            <a href="sellerPage">
+                <button type="button" id="dashboardRedirect" class="btn btn-floating btn-lg rounded-circle text-light position-fixed d-block"  data-bs-toggle="tooltip" data-bs-placement="right" title="DASHBOARD">
+                    <i class="fa-solid fa-shop"></i>
+                </button>
+            </a>
+        </c:if>
             <div>
                 <span id="triggerSuccess" class="d-none" data-bs-toggle="modal" data-bs-target="#success"></span>                     
                 <div class="modal fade" id="success" tabindex="-1" aria-hidden="true">
@@ -207,6 +218,12 @@
         </section>
         <script src="js/util.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+        <script>
+            function filter(e){
+                var form = $(e).closest('form');
+                form.submit();
+            }
+        </script>
         <script>
                                                     let loadMoreBtn = document.querySelector('#load-more');
                                                     let currentItem = 8;

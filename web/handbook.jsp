@@ -53,7 +53,7 @@
                                         <a href="account" class="nav-link mb-2 text-decoration-none p-2" id="item">Cài đặt tài khoản</a>   
                                     </c:if>                               
                                     <c:if test="${sessionScope.USER.role eq 'SE'}">                                  
-                                        <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>   
+                                        <a href="sellerPage" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>   
                                     </c:if>                                 
                                     <c:if test="${sessionScope.USER.role eq 'AD'}">            
                                         <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý cửa hàng</a>   
@@ -99,7 +99,7 @@
                             <c:param name="postID" value="${post.postID}"/>     
                         </c:url>
                         <a href="${postLink}" class="nav-link col mb-4" id="post">
-                            <img src="${post.image}" class="col-10"><br>
+                            <img src="${post.thumbnail}" class="col-10" width="316.5" height="165.1"><br>
                             <span class="mt-2 col-10 text-start d-inline-flex">${post.title}</span>
                         </a> 
                     </c:forEach>                    
@@ -117,6 +117,13 @@
         </button>
         <c:if test="${sessionScope.USER.role eq 'AD'}">
             <a href="dashboard">
+                <button type="button" id="dashboardRedirect" class="btn btn-floating btn-lg rounded-circle text-light position-fixed d-block"  data-bs-toggle="tooltip" data-bs-placement="right" title="DASHBOARD">
+                    <i class="fa-solid fa-shop"></i>
+                </button>
+            </a>
+        </c:if>
+        <c:if test="${sessionScope.USER.role eq 'SE'}">
+            <a href="sellerPage">
                 <button type="button" id="dashboardRedirect" class="btn btn-floating btn-lg rounded-circle text-light position-fixed d-block"  data-bs-toggle="tooltip" data-bs-placement="right" title="DASHBOARD">
                     <i class="fa-solid fa-shop"></i>
                 </button>

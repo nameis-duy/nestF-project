@@ -15,31 +15,54 @@ public class VoucherTypeDTO implements Serializable{
     
     private int typeID;
     private String voucherName;
-    private Long saleMargin;
+    private Double saleValue;
     private int quantity;
     private int point;
+    private boolean status;
 
     public VoucherTypeDTO() {
     }
 
-    public VoucherTypeDTO(int typeID, String voucherName, Long saleMargin, int quantity, int point) {
-        this.typeID = typeID;
+    public VoucherTypeDTO(String voucherName, Double saleValue, int quantity, int point, boolean status) {
         this.voucherName = voucherName;
-        this.saleMargin = saleMargin;
+        this.saleValue = saleValue;
         this.quantity = quantity;
         this.point = point;
+        this.status = status;
     }
 
+    public VoucherTypeDTO(int typeID, String voucherName, Double saleValue, int quantity, int point, boolean status) {
+        this.typeID = typeID;
+        this.voucherName = voucherName;
+        this.saleValue = saleValue;
+        this.quantity = quantity;
+        this.point = point;
+        this.status = status;
+    }
+
+    public Double getSaleValue() {
+        return saleValue;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setSaleValue(Double saleValue) {
+        this.saleValue = saleValue;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    
     public void setTypeID(int typeID) {
         this.typeID = typeID;
     }
 
     public void setVoucherName(String voucherName) {
         this.voucherName = voucherName;
-    }
-
-    public void setSaleMargin(Long saleMargin) {
-        this.saleMargin = saleMargin;
     }
 
     public void setQuantity(int quantity) {
@@ -56,10 +79,6 @@ public class VoucherTypeDTO implements Serializable{
 
     public String getVoucherName() {
         return voucherName;
-    }
-
-    public Long getSaleMargin() {
-        return saleMargin;
     }
 
     public int getQuantity() {

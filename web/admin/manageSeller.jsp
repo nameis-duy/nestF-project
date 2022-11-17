@@ -6,8 +6,52 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix = "f" uri = "http://java.sun.com/jsp/jstl/fmt" %>
+<jsp:useBean id="money" class="com.nestf.util.FormatPrinter"></jsp:useBean>
 
+<%@page language="java"%>
+<%@ page import="java.util.*,java.sql.*" %>
+<%@ page import="com.google.gson.Gson"%>
+<%@ page import="com.google.gson.JsonObject"%>
+
+<%
+    Gson gsonObj = new Gson();
+    Map<Object, Object> map2 = null;
+    List<Map<Object, Object>> list2 = new ArrayList<Map<Object, Object>>();
+    String dataPoints2 = null;
+    try {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        Connection connection = DriverManager.getConnection("jdbc:sqlserver://localhost:1433;databaseName=NestF;instanceName=SQLEXPRESS", "sa", "123");
+        Statement statement = connection.createStatement();
+        String xVal, yVal;
+
+        ResultSet resultSet2 = statement.executeQuery("SELECT account.name as xVal, count(ps.selPhone) as total\n"
+                + "FROM tblProductSeller ps\n"
+                + "RIGHT JOIN (SELECT p.productID\n"
+                + "           FROM tblProducts p\n"
+                + "           WHERE p.status = 1) as p\n"
+                + "           ON ps.productID = p.productID AND ps.isActive = 1\n"
+                + "		RIGHT JOIN (SELECT acc.phone, name\n"
+                + "            	fROM tblAccount acc\n"
+                + "            	WHERE acc.role = 'SE') as account\n"
+                + "         ON account.phone = ps.selPhone \n"
+                + "Group by account.phone, name");
+//        ResultSetMetaData rsmd2 = resultSet2.getMetaData();
+
+        while (resultSet2.next()) {
+            xVal = resultSet2.getString("xVal");
+            yVal = resultSet2.getString("total");
+            map2 = new HashMap<Object, Object>();
+            map2.put("label", xVal);
+            map2.put("y", Integer.parseInt(yVal));
+            list2.add(map2);
+            dataPoints2 = gsonObj.toJson(list2);
+        }
+        connection.close();
+    } catch (SQLException e) {
+        out.println("<div  style='width: 50%; margin-left: auto; margin-right: auto; margin-top: 100px;'>Could not connect to the database. Please check if you have SQLServer Connector installed on the machine - if not, try installing the same.</div>");
+        dataPoints2 = null;
+    }
+%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -18,14 +62,48 @@
 
         <!-- Custom fonts for this template-->
         <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <link
             href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
             rel="stylesheet">
 
         <!-- Custom styles for this template-->
         <link href="css/sb-admin-2.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
         <link rel="stylesheet" href="admin/css/register.css">
+
+        <style>
+            .canvasjs-chart-credit{
+                display: none !important;
+            }
+
+        </style>
+
+        <script type="text/javascript">
+            window.onload = function () {
+//            Pie Chart
+            <% if (dataPoints2
+                        != null) { %>
+                var chart2 = new CanvasJS.Chart("chartContainer2", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    exportFileName: "Pob",
+                    exportEnabled: true,
+                    title: {
+                        text: "Product of Seller"
+                    },
+                    data: [{
+                            type: "doughnut",
+//                            showInLegend: true,
+                            legendText: "{label}",
+                            toolTipContent: "{label}: <strong>{y}%</strong>",
+                            indexLabel: "{label} {y}",
+                            dataPoints: <%out.print(dataPoints2);%>
+                        }]
+                });
+                chart2.render();
+            <% }%>
+            }
+        </script>
     </head>
     <body id="page-top">
         <!--///////////////Bắt đầu phần Chung//////////////////////////////////////////////////////////-->
@@ -42,13 +120,13 @@
                 <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
 
                     <!-- Sidebar - Brand -->
-                    <a href="dashboard" class="text-center my-xl-2"><img src="img/logo.png" id="logo" width="55px"
-                                                                         height="38px"></a>
+                    <a href="home" class="text-center my-xl-2"><img src="img/logo.png" id="logo" width="55px"
+                                                                    height="38px"></a>
                     <!-- Divider -->
                     <hr class="sidebar-divider my-0">
 
                     <!-- Nav Item - Dashboard -->
-                    <li class="nav-item active">
+                    <li class="nav-item">
                         <a class="nav-link" href="dashboard">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span></a>
@@ -90,16 +168,16 @@
                     <hr class="sidebar-divider">
 
                     <!-- Nav Item - Pages Collapse Menu -->
-                    <li class="nav-item">
-                        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#" data-toggle="collapse" data-target="#collapseTwo"
                            aria-expanded="true" aria-controls="collapseTwo">
                             <i class="fa fa-users"></i>
                             <span>Users</span>
                         </a>
-                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                        <div id="collapseTwo" class="collapse show" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Manage: </h6>
-                                <a class="collapse-item" href="manageSellerPage">Seller</a>
+                                <a class="collapse-item fw-bold" href="manageSellerPage">Seller</a>
                                 <a class="collapse-item" href="manageCustomerPage">Customer</a>
                             </div>
                         </div>
@@ -130,9 +208,18 @@
 
                     <!-- Nav Item - Charts -->
                     <li class="nav-item">
-                        <a class="nav-link" href="manageVoucherPage">
-                            <i class="fa fa-gift" aria-hidden="true"></i>
+                        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseVouchers"
+                           aria-expanded="true" aria-controls="collapseVouchers">
+                            <i class="fa fa-gift"></i>
                             <span>Voucher</span></a>
+                        <div id="collapseVouchers" class="collapse" aria-labelledby="headingProducts"
+                             data-parent="#accordionSidebar">
+                            <div class="bg-white py-2 collapse-inner rounded">
+                                <h6 class="collapse-header">Manage:</h6>
+                                <a class="collapse-item fw-bold disabled" href="voucher">All voucher types</a>
+                                <a class="collapse-item" href="updateVoucher?act=add">Add/Update voucher type</a>
+                            </div>
+                        </div>
                     </li>
 
                     <!-- Divider -->
@@ -210,122 +297,6 @@
                                     </div>
                                 </li>
 
-                                <!-- Nav Item - Alerts -->
-                                <li class="nav-item dropdown no-arrow mx-1">
-                                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-bell fa-fw"></i>
-                                        <!-- Counter - Alerts -->
-                                        <span class="badge badge-danger badge-counter">3+</span>
-                                    </a>
-                                    <!-- Dropdown - Alerts -->
-                                    <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                         aria-labelledby="alertsDropdown">
-                                        <h6 class="dropdown-header">
-                                            Alerts Center
-                                        </h6>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="mr-3">
-                                                <div class="icon-circle bg-dark">
-                                                    <i class="fas fa-file-alt text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="small text-gray-500">December 12, 2019</div>
-                                                <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="mr-3">
-                                                <div class="icon-circle bg-success">
-                                                    <i class="fas fa-donate text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="small text-gray-500">December 7, 2019</div>
-                                                $290.29 has been deposited into your account!
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="mr-3">
-                                                <div class="icon-circle bg-warning">
-                                                    <i class="fas fa-exclamation-triangle text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="small text-gray-500">December 2, 2019</div>
-                                                Spending Alert: We've noticed unusually high spending for your account.
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-                                    </div>
-                                </li>
-
-                                <!-- Nav Item - Messages -->
-                                <li class="nav-item dropdown no-arrow mx-1">
-                                    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-envelope fa-fw"></i>
-                                        <!-- Counter - Messages -->
-                                        <span class="badge badge-danger badge-counter">7</span>
-                                    </a>
-                                    <!-- Dropdown - Messages -->
-                                    <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                         aria-labelledby="messagesDropdown">
-                                        <h6 class="dropdown-header">
-                                            Message Center
-                                        </h6>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="dropdown-list-image mr-3">
-                                                <img class="rounded-circle" src="img/undraw_profile_1.svg" alt="...">
-                                                <div class="status-indicator bg-success"></div>
-                                            </div>
-                                            <div class="font-weight-bold">
-                                                <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                                    problem I've been having.</div>
-                                                <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="dropdown-list-image mr-3">
-                                                <img class="rounded-circle" src="img/undraw_profile_2.svg" alt="...">
-                                                <div class="status-indicator"></div>
-                                            </div>
-                                            <div>
-                                                <div class="text-truncate">I have the photos that you ordered last month, how
-                                                    would you like them sent to you?</div>
-                                                <div class="small text-gray-500">Jae Chun · 1d</div>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="dropdown-list-image mr-3">
-                                                <img class="rounded-circle" src="img/undraw_profile_3.svg" alt="...">
-                                                <div class="status-indicator bg-warning"></div>
-                                            </div>
-                                            <div>
-                                                <div class="text-truncate">Last month's report looks great, I am very happy with
-                                                    the progress so far, keep up the good work!</div>
-                                                <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="dropdown-list-image mr-3">
-                                                <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                                     alt="...">
-                                                <div class="status-indicator bg-success"></div>
-                                            </div>
-                                            <div>
-                                                <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                                    told me that people say this to all dogs, even if they aren't good...</div>
-                                                <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                                    </div>
-                                </li>
-
-                                <div class="topbar-divider d-none d-sm-block"></div>
-
                                 <!-- Nav Item - User Information -->
                                 <li class="nav-item dropdown no-arrow">
                                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
@@ -336,17 +307,9 @@
                                     <!-- Dropdown - User Information -->
                                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                          aria-labelledby="userDropdown">
-                                        <a class="dropdown-item" href="adminProfile.jsp">
+                                        <a class="dropdown-item" href="adminProfilePage">
                                             <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                             Profile
-                                        </a>
-                                        <a class="dropdown-item" href="#">
-                                            <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                            Settings
-                                        </a>
-                                        <a class="dropdown-item" href="#">
-                                            <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                            Activity Log
                                         </a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
@@ -365,92 +328,89 @@
 
                             <!-- Page Heading -->
                             <div class="d-sm-flex align-items-center justify-content-between row mb-4">
-                                <div class="col-9">
-                                    <h1 class="h3 mb-0 text-gray-800 col-9">Manage seller</h1>
+                                <div class="col-6">
+                                    <h1 class="h3 mb-1 text-gray-800 col-9">Manage seller</h1>
+                                    <c:if test="${not empty requestScope.SELLER_ERROR}">
+                                        <font color="red">
+                                        ${requestScope.SELLER_ERROR}
+                                        </font> <br/>
+                                    </c:if>
+                                </div>
+                                <div class="col-4">
+                                    <c:if test="${not empty sessionScope.MONTH}">
+                                        <c:set var="MONTH" value="${sessionScope.MONTH}"/>
+                                        <form name="form1" action="checkSellerMonthly" class="row">
+                                            <div class="col-2 font-weight-bold">Time :</div>
+                                            <input class="col-5 mr-2" value="${MONTH}" min="2022-01" type="month" name="choosetime" onchange="javascript:document.form1.submit();">
+                                        </form>
+                                    </c:if>
                                 </div>
                                 <!--Home page popup button-->
-                                <div class="col-3 ">
+                                <div class="col-2 ">
                                     <div class="float-right start-btn">
                                         <input type="checkbox" id="show">
-                                        <input type="button" class="show-btn btn btn-dark" onclick="openForm()" value="Add new seller"></input>
+                                        <input type="button" class="show-btn btn btn-dark" data-toggle="modal" data-target="#registerModal" value="Add new seller"></input>
                                     </div>
                                 </div>
                             </div>
                             <div id="container-register" style="display: none">
-                                <input type="button" class="close-btn" title="close" onclick="closeForm()" value="X"></input>
+                                <input type="button" class="close-btn" title="close" onclick="closeForm()" value="X" ></input>
                                 <div class="text">
                                     Create new seller
                                 </div>
-                                <form action="AddNewSeller">
-                                    <div class="data">
-                                        <label>Full Name</label>
-                                        <input type="text" required  name="name" required minlength="6" maxlength="30" placeholder="6 - 30 ký tự">
-                                    </div>
-                                    <div class="data sencondchild">
-                                        <label>Gender</label>
-                                        <span class="gender" style="white-space: nowrap;">
-                                            <input type="radio" id="male" checked="" name="gender" value="1">
-                                            <label for="male">Nam&emsp;</label>
-                                            <input type="radio" id="female" name="gender" value="0">
-                                            <label for="female">Nữ</label>
-                                        </span>
-                                    </div>
-                                    <div class="data">
-                                        <label>Phone number</label>
-                                        <input type="number"  name="phone" required minlength="10" maxlength="11" placeholder="10 - 11 chữ số">
-                                    </div>
-                                    <div class="data">
-                                        <label>Password</label>
-                                        <input type="password" required minlength="6" maxlength="20" id="password" placeholder="6 - 20 ký tự">
-                                    </div>
-                                    <div class="data">
-                                        <label>Confirm Password</label>
-                                        <input type="password" name="confirm" required minlength="6" maxlength="20" id="confirm" onblur="validate();">
-                                    </div>
-                                    <div class="data">
-                                        <label>Address</label>
-                                        <input type="text" name="address" required minlength="10" maxlength="70" placeholder="20 - 70 ký tự">
-                                    </div>
-                                    <div class="btn btn-dark">
-                                        <div class="inner"></div>
-                                        <button type="submit">Create</button>
-                                    </div>
-                                </form>
+
+
                             </div>
 
                             <!-- Content Row -->
-                            <c:if test="${not empty sessionScope.MANAGE_SELLER}">
-                                <table class="table table-striped table-hover table-bordered">
-                                    <thead>
-                                        <tr class="text-center">
-                                            <th>Name</th>
-                                            <th>Phone</th>
-                                            <th>Address</th>
-                                            <th>Revenue(VND)</th>
-                                            <th>Block</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <c:forEach var="seller" items="${sessionScope.MANAGE_SELLER}">
-                                            <tr class="text-center">
-                                                <td><a class="text-decoration-none" href="showProduct?phone=${seller.phone}">${seller.name}</td>
-                                                <td>${seller.phone}</td>
-                                                <td>${seller.address}</td>
-                                                <td><f:formatNumber  maxIntegerDigits="7" minIntegerDigits="2" value="${seller.total}" var="formattedPrice" />${seller.total}</td>
-                                                <td>
-                                                    <c:if test="${seller.status}">
-                                                        <a href="blockCustomerAction?phone=${seller.phone}&btAction=block" class="btn btn-danger">Block</a>
-                                                    </c:if>
+                            <div class="row">
+                                <div class="col-8 row">
+                                    <div class="col-12">
+                                        <c:if test="${not empty sessionScope.MANAGE_SELLER}">
+                                            <table class="table table-striped table-hover table-bordered">
+                                                <thead>
+                                                    <tr class="text-center">
+                                                        <th>Name</th>
+                                                        <th>Phone</th>
+                                                        <th>Number of product</th>
+                                                        <th>Revenue</th>
+                                                        <th>Block</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <c:forEach var="seller" items="${sessionScope.MANAGE_SELLER}">
+                                                        <tr class="text-center">
+                                                            <td><a class="text-decoration-none" href="managePSeller?phone=${seller.phone}&type=show">${seller.name}</a></td>
+                                                            <td>${seller.phone}</td>
+                                                            <td><a class="text-decoration-none" href="managePSeller?phone=${seller.phone}&type=show">${seller.selQuantity}</td>
+                                                            <td>${money.printMoney(seller.total)}</td>
+                                                            <td>
+                                                                <c:if test="${seller.status}">
+                                                                    <a href="managePSeller?phone=${seller.phone}&product=${seller.selQuantity}&type=block" class="btn btn-danger">Block</a>
+                                                                </c:if>
 
-                                                    <c:if test="${not seller.status}">
-                                                        <a href="blockCustomerAction?phone=${seller.phone}&btAction=unblock" class="btn btn-dark">Unblock</a>
-                                                    </c:if>
-                                                </td>
-                                            </tr>
-                                        </c:forEach>
-                                    </tbody>
-                                </table>
-                            </c:if>                   
+                                                                <c:if test="${not seller.status}">
+                                                                    <a href="managePSeller?phone=${seller.phone}&type=unblock" class="btn btn-dark">Unblock</a>
+                                                                </c:if>
+                                                            </td>
+                                                        </tr>
+                                                    </c:forEach>
+                                                </tbody>
+                                            </table>
+                                        </c:if>
+                                    </div>
+                                    <div class="col-12"><br/></div>                                   
+                                </div>
+                                <div class="col-4">
+                                    <div class="card shadow mb-2 ">
+                                        <div class="card-body pb-5">
+                                            <div class="chart-area">
+                                                <div id="chartContainer2" style="height: 350px; width: 100%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <!--End of Content Row -->
                         </div>
                         <!-- End of Content Wrapper -->
@@ -462,6 +422,8 @@
                     <a class="scroll-to-top rounded" href="#page-top">
                         <i class="fas fa-angle-up"></i>
                     </a>
+
+
 
                     <!-- Logout Modal-->
                     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
@@ -483,15 +445,73 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <footer class="sticky-footer bg-white sticky-footer">
-                <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; NestF 2022</span>
+
+                    <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <form action="AddNewSeller">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">×</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="modal-body">
+
+
+                                        <div class="data">
+                                            <label>Full Name</label>
+                                            <input type="text" required  name="name" required minlength="6" maxlength="30" placeholder="6 - 30 ký tự">
+                                        </div>
+                                        <div class="data sencondchild">
+                                            <label>Gender</label>
+                                            <span class="gender" style="white-space: nowrap;">
+                                                <input type="radio" id="male" checked="" name="gender" value="1">
+                                                <label for="male">Nam&emsp;</label>
+                                                <input type="radio" id="female" name="gender" value="0">
+                                                <label for="female">Nữ</label>
+                                            </span>
+                                        </div>
+                                        <div class="data">
+                                            <label>Phone number</label>
+                                            <input type="number"  name="phone" required minlength="10" maxlength="11" placeholder="10 - 11 chữ số">
+                                        </div>
+                                        <div class="data">
+                                            <label>Password</label>
+                                            <input type="password" name="password" required minlength="6" maxlength="20" id="password" placeholder="6 - 20 ký tự">
+                                        </div>
+                                        <div class="data">
+                                            <label>Confirm Password</label>
+                                            <input type="password" name="confirm" required minlength="6" maxlength="20" id="confirm" onblur="validate();">
+                                        </div>
+                                        <div class="data">
+                                            <label>Address</label>
+                                            <input type="text" name="address" required minlength="10" maxlength="70" placeholder="20 - 70 ký tự">
+                                        </div>
+
+
+
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                                        <button class="btn btn-dark" type="submit">Create</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </footer>
+            </div>
+            <!--            <footer class="sticky-footer bg-white sticky-footer">
+                            <div class="container my-auto">
+                                <div class="copyright text-center my-auto">
+                                    <span>Copyright &copy; NestF 2022</span>
+                                </div>
+                            </div>
+                        </footer>-->
             <!-- End of Footer -->
             <!-- Bootstrap core JavaScript-->
             <script src="vendor/jquery/jquery.min.js"></script>
@@ -509,18 +529,92 @@
             <!-- Page level custom scripts -->
             <script src="js/demo/chart-area-demo.js"></script>
             <script src="js/demo/chart-pie-demo.js"></script>
-
-            <script src="./js/nestf.js"></script>
-
             <script>
-                                            function openForm() {
-                                                document.getElementById("container-register").style.display = "block";
-                                            }
+                                                function openForm() {
+                                                    document.getElementById("container-register").style.display = "block";
+                                                }
 
-                                            function closeForm() {
-                                                document.getElementById("container-register").style.display = "none";
-                                            }
+                                                function closeForm() {
+                                                    document.getElementById("container-register").style.display = "none";
+                                                }
             </script>
+            <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+            <div class="col-12">
+                <c:if test="${not empty requestScope.PRODUCT_SELLER}">
+                    <c:set var="selName" value="${requestScope.SELLER_NAME}"/>
+                    <div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Sản phẩm của ${selName}</h5>
+                                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">×</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <table class="table table-striped table-hover table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <!--<th class="text-center">ID</th>-->
+                                                <th class="text-center">Name</th>
+                                                <!--<th class="text-center">Price</th>-->
+                                                <!--<th class="text-center">Quantity</th>-->
+                                                <th class="text-center">Category</th>
+                                                <!--<th class="text-center">Discount</th>-->
+                                                <th class="text-center">Change Seller</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="product" items="${requestScope.PRODUCT_SELLER}">
+                                                <tr>
+                                                    <%-- <td>${product.productID}</td>--%>
+                                                    <td>${product.name}</td>
+                                                    <%-- <td>${product.price}</td>--%>
+                                                    <%-- <td>${product.quantity}</td>--%>
+                                                    <td>${product.category.categoryName}</td>
+                                                    <%-- <td>${product.discountPrice}</td>--%>
+                                                    <td>
+                                                        <c:set var="listSeller" value="${sessionScope.LIST_SELLER}"/>
+                                                        <form action="changeSeller">
+                                                            <div  class="row">
+                                                                <input type="hidden" value="${product.selName}" name="selNameOld"/>
+                                                                <input class="form-control form-control-sm col-7 ml-2 mr-1" type="text" value="${product.selName}" name="selNameNew" list="sellerlist"/>
+                                                                <input type="hidden" value="${product.productID}" name="productID"/>
+
+                                                                <datalist id="sellerlist">
+                                                                    <label class="form-label select-label">Choose option:</label>
+                                                                    <option disabled>Choose option</option>
+                                                                    <c:forEach var="dto" items="${listSeller}">
+                                                                        <option class="" value="${dto.name}">Number of product: ${dto.selQuantity}</option>
+                                                                    </c:forEach>
+                                                                </datalist>
+                                                                <input class="btn btn-dark col-4 mr-1" type="submit" name="btAction" value="Change" />
+                                                            </div>
+                                                        </form>
+
+                                                    </td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type=button" class="d-none" data-toggle="modal" data-target="#productModal" id="triggerProductModal">
+                        Logout
+                    </button>
+                    <script>
+                                                window.onload = function () {
+                                                    document.getElementById("triggerProductModal").click();
+                                                }
+                    </script>
+                </c:if>
+            </div>
         </c:if>
     </body>
 </html>

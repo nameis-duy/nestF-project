@@ -52,11 +52,11 @@
                         <div id="dropDownMenu" class="d-inline-block position-relative">
                             <i class="fas fa-user me-2"></i>${sessionScope.USER.name}
                             <div id="dropDownContent" class="d-none bg-white text-start position-absolute shadow">
-                                     <c:if test="${not empty sessionScope.USER}">                              
+                                <c:if test="${not empty sessionScope.USER}">                              
                                     <a href="account" class="nav-link mb-2 text-decoration-none p-2" id="item">Cài đặt tài khoản</a>     
                                 </c:if>                           
                                 <c:if test="${sessionScope.USER.role eq 'SE'}">               
-                                    <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>        
+                                    <a href="sellerPage" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>        
                                 </c:if>                            
                                 <c:if test="${sessionScope.USER.role eq 'AD'}">             
                                     <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý cửa hàng</a>  
@@ -102,6 +102,7 @@
                                 <h5 class="modal-title m-3" id="choose1Voucher">Danh sách các sản phẩm quý khách đã chọn mua</h5>
                                 <c:if test="${not empty requestScope.VOUCHER_USE}">
                                     <span>Voucher sử dụng : <b>${requestScope.VOUCHER_USE.voucherType.voucherName}</b></span>
+                                    <br><span>Trị giá : <b>${formatPrinter.printMoney(requestScope.VOUCHER_USE.voucherType.saleValue)}</b></span>
                                 </c:if>
                                 <button type="button" class="btn-close m-3" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
@@ -156,6 +157,7 @@
                     </p>                  
                     <jsp:useBean id="formatter" class="com.nestf.util.FormatPrinter"/>
                     <c:set var = "totalInUSD" value="${formatter.toUSD(requestScope.TOTAL)}"/>
+                    <c:set var = "paypalTotal" value="${formatter.paypalUSD(requestScope.TOTAL)}"/>
                     <span>Thành tiền : <b>${formatter.printMoney(requestScope.TOTAL)}</b> (quy đổi sang USD : <b>$${totalInUSD}</b>)</span><br>
                     <span>Quý khách sẽ được cộng <b>${formatPrinter.noFraction(requestScope.TOTAL/1000)}</b> điểm tích luỹ khi quá trình giao hàng bắt đầu</span>
                 </div>
@@ -172,41 +174,50 @@
                 </button>
             </a>
         </c:if>
+        <c:if test="${sessionScope.USER.role eq 'SE'}">
+            <a href="sellerPage">
+                <button type="button" id="dashboardRedirect" class="btn btn-floating btn-lg rounded-circle text-light position-fixed d-block"  data-bs-toggle="tooltip" data-bs-placement="right" title="DASHBOARD">
+                    <i class="fa-solid fa-shop"></i>
+                </button>
+            </a>
+        </c:if>
         <c:import url="footer.html" charEncoding="UTF-8"/>               
         <script src="js/util.js"></script>   
         <script src="https://www.paypal.com/sdk/js?client-id=AeJ5oAA7OGoD8dlZNG6MWDNJqDoV2MQaaldDD1xNoq0upDs938zsUah_a2tjlplqHCutIojCuLwYJK__&currency=USD"></script>
-        <script>
-            paypal.Buttons({
-                // Sets up the transaction when a payment button is clicked
-                createOrder: (data, actions) => {
-                    return actions.order.create({
-                        purchase_units: [{
-                                amount: {
-                                    value: '${totalInUSD}' // Can also reference a variable or function
-                                }
-                            }]
-                    });
-                },
-                // Finalize the transaction after payer approval
-                onApprove: (data, actions) => {
-                    return actions.order.capture().then(function (orderData) {
-                        // Successful capture! For dev/demo purposes:
-                        const transaction = orderData.purchase_units[0].payments.captures[0];
-                        // When ready to go live, remove the alert and show a success message within this page. For example:
-                        // const element = document.getElementById('paypal-button-container');
-                        // element.innerHTML = '<h3>Thank you for your payment!</h3>';
-                        // Or go to another URL:  actions.redirect('thank_you.html');
-                        var url = 'confirmCheckOut?transactionID=' + transaction.id + '&address=';
-                        url += document.getElementById("address").value;
-                        url += "&total=${requestScope.TOTAL}";
-            <c:if test = "${not empty requestScope.VOUCHER_USE}">
-                        url += "&voucherID=${requestScope.VOUCHER_USE.voucherID}";
-            </c:if>
-                        window.location.replace(url);
-                    });
-                }
-            }).render('#paypalButtonContainer');
-        </script>
+        <c:if test="${empty sessionScope.ADMIN && sessionScope.USER.role ne 'SE'}">
+            <script>
+                paypal.Buttons({
+                    // Sets up the transaction when a payment button is clicked
+                    createOrder: (data, actions) => {
+                        return actions.order.create({
+                            purchase_units: [{
+                                    amount: {
+                                        value: '${paypalTotal}' // Can also reference a variable or function
+                                    }
+                                }]
+                        });
+                    },
+                    // Finalize the transaction after payer approval
+                    onApprove: (data, actions) => {
+                        return actions.order.capture().then(function (orderData) {
+                            // Successful capture! For dev/demo purposes:
+                            const transaction = orderData.purchase_units[0].payments.captures[0];
+                            // When ready to go live, remove the alert and show a success message within this page. For example:
+                            // const element = document.getElementById('paypal-button-container');
+                            // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+                            // Or go to another URL:  actions.redirect('thank_you.html');
+                            var url = 'confirmCheckOut?transactionID=' + transaction.id + '&address=';
+                            url += document.getElementById("address").value;
+                            url += "&total=${requestScope.TOTAL}";
+                <c:if test = "${not empty requestScope.VOUCHER_USE}">
+                            url += "&voucherID=${requestScope.VOUCHER_USE.voucherID}";
+                </c:if>
+                            window.location.replace(url);
+                        });
+                    }
+                }).render('#paypalButtonContainer');
+            </script>
+        </c:if>
     </body>
 
 </html>

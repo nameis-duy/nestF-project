@@ -51,11 +51,11 @@
                                 <div id="dropDownMenu" class="d-inline-block position-relative">
                                     <i class="fas fa-user me-2"></i>${sessionScope.USER.name}
                                     <div id="dropDownContent" class="d-none bg-white text-start position-absolute shadow">
-                                             <c:if test="${not empty sessionScope.USER}"> 
+                                        <c:if test="${not empty sessionScope.USER}"> 
                                             <a href="account" class="nav-link mb-2 text-decoration-none p-2" id="item">Cài đặt tài khoản</a>
                                         </c:if>
                                         <c:if test="${sessionScope.USER.role eq 'SE'}">
-                                            <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>
+                                            <a href="sellerPage" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý đơn hàng</a>
                                         </c:if>
                                         <c:if test="${sessionScope.USER.role eq 'AD'}">
                                             <a href="dashboard" class="nav-link mb-2 text-decoration-none p-2" id="item">Quản lý cửa hàng</a>
@@ -173,8 +173,13 @@
                                                     </div>
 
                                                     <div class="buynow-btn">
-                                                        <button class="btn btn-dark" onclick="checkState(${not empty sessionScope.USER ? product.productID : ''})">
-                                                            <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                        <button class="btn btn-dark" ${product.quantity eq 0 ? 'disabled' : ''} onclick="checkState(${not empty sessionScope.USER ? product.productID : ''})">
+                                                            <c:if test="${product.quantity eq 0}">
+                                                                <i class="fa-solid fa-cart-xmark"></i> Hết hàng
+                                                            </c:if>
+                                                            <c:if test="${product.quantity ne 0}">
+                                                                <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                            </c:if>                                                           
                                                         </button>
                                                         </a>
                                                     </div>
@@ -219,24 +224,28 @@
                             <img src="${productList[1].imagelink[0]}" alt="Image for ${productList[1].name}" class="ms-2">
                         </div>
                         <div class="combo-product-btn">
-                            <p>Chỉ với 
-                                <c:if test="${productList[0].discountPrice == 0 && productList[1].discountPrice == 0}">
-                                    ${proFunc.printPrice(productList[0].price + productList[1].price)}
-                                </c:if>
-                                <c:if test="${productList[0].discountPrice != 0 && productList[1].discountPrice == 0}">
-                                    ${proFunc.printPrice(productList[0].discountPrice + productList[1].price)}
-                                </c:if>
-                                <c:if test="${productList[0].discountPrice == 0 && productList[1].discountPrice != 0}">
-                                    ${proFunc.printPrice(productList[0].price + productList[1].discountPrice)}
-                                </c:if>
-                                <c:if test="${productList[0].discountPrice != 0 && productList[1].discountPrice != 0}">
-                                    ${proFunc.printPrice(productList[0].discountPrice + productList[1].discountPrice)}
-                                </c:if>
+                            <p>Chỉ với
+                                <b>
+                                    <c:if test="${productList[0].discountPrice == 0 && productList[1].discountPrice == 0}">
+                                        ${proFunc.printPrice(productList[0].price + productList[1].price)}
+                                    </c:if>
+                                    <c:if test="${productList[0].discountPrice != 0 && productList[1].discountPrice == 0}">
+                                        ${proFunc.printPrice(productList[0].discountPrice + productList[1].price)}
+                                    </c:if>
+                                    <c:if test="${productList[0].discountPrice == 0 && productList[1].discountPrice != 0}">
+                                        ${proFunc.printPrice(productList[0].price + productList[1].discountPrice)}
+                                    </c:if>
+                                    <c:if test="${productList[0].discountPrice != 0 && productList[1].discountPrice != 0}">
+                                        ${proFunc.printPrice(productList[0].discountPrice + productList[1].discountPrice)}
+                                    </c:if>
+                                </b>
                             </p>
                             <c:set var="productCodes" value="${productList[0].productID},${productList[1].productID}"/>
-                            <button class="btn btn-dark" onclick="checkState(${not empty sessionScope.USER ? productCodes : ''})">
-                                <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
-                            </button>
+                            <c:if test = "${productList[0].quantity ne 0 && productList[1].quantity ne 0}">
+                                <button class="btn btn-dark" onclick="checkState(${not empty sessionScope.USER ? productCodes : ''})">
+                                    <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                </button> 
+                            </c:if>                           
                         </div>
                     </div>
                 </div>
@@ -279,8 +288,13 @@
                                                         </div>
 
                                                         <div class="buynow-btn">
-                                                            <button class="btn btn-dark" onclick="checkState(${not empty sessionScope.USER ? anotherSuggest.productID : ''})">
-                                                                <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                            <button class="btn btn-dark" ${anotherSuggest.quantity eq 0 ? 'disabled' : ''} onclick="checkState(${not empty sessionScope.USER ? anotherSuggest.productID : ''})">
+                                                                <c:if test="${anotherSuggest.quantity eq 0}">
+                                                                    <i class="fa-solid fa-cart-xmark"></i> Hết hàng
+                                                                </c:if>
+                                                                <c:if test="${anotherSuggest.quantity ne 0}">
+                                                                    <i class="fa-solid fa-cart-shopping"></i> Thêm vào giỏ
+                                                                </c:if>
                                                             </button>
                                                         </div>
 
@@ -309,6 +323,13 @@
                     </button>
                 </a>
             </c:if>
+                            <c:if test="${sessionScope.USER.role eq 'SE'}">
+            <a href="sellerPage">
+                <button type="button" id="dashboardRedirect" class="btn btn-floating btn-lg rounded-circle text-light position-fixed d-block"  data-bs-toggle="tooltip" data-bs-placement="right" title="DASHBOARD">
+                    <i class="fa-solid fa-shop"></i>
+                </button>
+            </a>
+        </c:if>
             <div>
                 <span id="triggerSuccess" class="d-none" data-bs-toggle="modal" data-bs-target="#success"></span>                     
                 <div class="modal fade" id="success" tabindex="-1" aria-hidden="true">

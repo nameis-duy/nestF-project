@@ -34,16 +34,17 @@ public class VoucherTypeDAO {
         try {
             con = DBHelper.makeConnection();
             if (con != null) {
-                String sql = "SELECT * FROM tblVoucherType ";
+                String sql = "SELECT * FROM tblVoucherType ORDER BY quantity";
                 stm = con.createStatement();
                 rs = stm.executeQuery(sql);
                 while (rs.next()) {
                     int typeID = rs.getInt("typeID");
                     String voucherName = rs.getString("voucherName");
-                    Long saleMargin = rs.getLong("saleMargin");
+                    Double saleValue = rs.getDouble("saleValue");
                     int quantity = rs.getInt("quantity");
                     int point = rs.getInt("point");
-                    VoucherTypeDTO dto = new VoucherTypeDTO(typeID, voucherName, saleMargin, quantity, point);
+                    boolean status = rs.getBoolean("status");
+                    VoucherTypeDTO dto = new VoucherTypeDTO(typeID, voucherName, saleValue, quantity, point, status);
                     if (list == null) {
                         list = new ArrayList<>();
                     }
@@ -76,10 +77,11 @@ public class VoucherTypeDAO {
                 rs = ptm.executeQuery();
                 if (rs.next()) {
                     String voucherName = rs.getString("voucherName");
-                    Long saleMargin = rs.getLong("saleMargin");
+                    Double saleValue = rs.getDouble("saleValue");
                     int quantity = rs.getInt("quantity");
                     int point = rs.getInt("point");
-                    VoucherTypeDTO dto = new VoucherTypeDTO(typeID, voucherName, saleMargin, quantity, point);
+                    boolean status = rs.getBoolean("status");
+                    VoucherTypeDTO dto = new VoucherTypeDTO(typeID, voucherName, saleValue, quantity, point, status);
                     return dto;
                 }
             }
@@ -108,6 +110,63 @@ public class VoucherTypeDAO {
                 ptm = conn.prepareStatement(sql);
                 ptm.setInt(1, newQuantity);
                 ptm.setInt(2, typeID);             
+                if(ptm.executeUpdate() > 0){
+                    check = true;
+                }
+            }
+        } finally {
+            if (ptm != null) {
+                ptm.close();
+            }
+            if (conn != null) {
+                conn.close();
+            }
+        }
+        return check;
+    }
+    public boolean updateVoucherType(VoucherTypeDTO voucherType) throws NamingException, SQLException{
+        Boolean check = false;      
+        Connection conn = null;
+        PreparedStatement ptm = null;
+        try {
+            conn = DBHelper.makeConnection();
+            if (conn != null) {
+                String sql = "UPDATE tblVoucherType SET voucherName = ?, saleValue = ?, quantity = ?, point = ?, status = ? WHERE typeID = ?";
+                ptm = conn.prepareStatement(sql);
+                ptm.setNString(1, voucherType.getVoucherName());
+                ptm.setDouble(2, voucherType.getSaleValue());
+                ptm.setInt(3, voucherType.getQuantity());
+                ptm.setInt(4, voucherType.getPoint());
+                ptm.setBoolean(5, voucherType.isStatus());
+                ptm.setInt(6, voucherType.getTypeID());             
+                if(ptm.executeUpdate() > 0){
+                    check = true;
+                }
+            }
+        } finally {
+            if (ptm != null) {
+                ptm.close();
+            }
+            if (conn != null) {
+                conn.close();
+            }
+        }
+        return check;
+    }
+    public boolean AddVoucherType(VoucherTypeDTO voucherType) throws NamingException, SQLException{
+        Boolean check = false;      
+        Connection conn = null;
+        PreparedStatement ptm = null;
+        try {
+            conn = DBHelper.makeConnection();
+            if (conn != null) {
+                String sql = "Insert tblVoucherType VALUES (?, ?, ? , ?, ?)";
+                ptm = conn.prepareStatement(sql);
+                ptm.setNString(1, voucherType.getVoucherName());
+                ptm.setDouble(2, voucherType.getSaleValue());
+                ptm.setInt(3, voucherType.getQuantity());
+                ptm.setInt(4, voucherType.getPoint());
+                ptm.setBoolean(5, voucherType.isStatus());             
                 if(ptm.executeUpdate() > 0){
                     check = true;
                 }

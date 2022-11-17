@@ -1,4 +1,4 @@
-/*
+    /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -34,6 +34,17 @@ public class AccountDTO implements Serializable {
 
     public double getPoint() {
         return point;
+    }
+
+    public AccountDTO(String phone, String password, String name, String address, boolean gender, double point, String role, boolean status) {
+        this.phone = phone;
+        this.password = password;
+        this.name = name;
+        this.address = address;
+        this.gender = gender;
+        this.point = point;
+        this.role = role;
+        this.status = status;
     }
 
     public AccountDTO(String phone, String password, String name, String address, boolean gender, double point, String role) {
@@ -82,12 +93,13 @@ public class AccountDTO implements Serializable {
     }
     
 //    Admin: manage seller
-    public AccountDTO(String phone, String name, String address, double total, boolean status) {
+    public AccountDTO(String phone, String name, String address, boolean status, int selQuantity, double total) {
         this.phone = phone;
         this.name = name;
         this.address = address;
-        this.total = total;
         this.status = status;
+        this.selQuantity = selQuantity;
+        this.total = total;
     }
 
     public String getPhone() {
